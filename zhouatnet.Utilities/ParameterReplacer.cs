@@ -21,7 +21,12 @@ namespace zhouatnet.Utilities
 
         protected override Expression VisitParameter(ParameterExpression p)
         {
-            return this.ParameterExpression;
+            if (p.Type == ParameterExpression.Type)
+            {
+                return this.ParameterExpression;
+            }
+
+            return p;
         }
     }
 }

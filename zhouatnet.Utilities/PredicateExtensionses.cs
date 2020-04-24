@@ -31,5 +31,35 @@ namespace zhouatnet.Utilities
             var body = Expression.Or(left, right);
             return Expression.Lambda<Func<T, bool>>(body, candidateExpr);
         }
+
+        public static Expression<Func<T, int, bool>> And<T>(this Expression<Func<T, int, bool>> exp_left, Expression<Func<T, int, bool>> exp_right)
+        {
+            var candidateExpr = Expression.Parameter(typeof(T), "candidate");
+            var parameterReplacer = new ParameterReplacer(candidateExpr);
+            var left = parameterReplacer.Replace(exp_left.Body);
+            var right = parameterReplacer.Replace(exp_right.Body);
+
+            var indexExpr = Expression.Parameter(typeof(int), "index");
+            var parameterReplacer2 = new ParameterReplacer(indexExpr);
+            left = parameterReplacer2.Replace(exp_left.Body);
+            right = parameterReplacer2.Replace(exp_right.Body);
+            var body = Expression.And(left, right);
+            return Expression.Lambda<Func<T, int, bool>>(body, candidateExpr, indexExpr);
+        }
+
+        public static Expression<Func<T, int, bool>> Or<T>(this Expression<Func<T, int, bool>> exp_left, Expression<Func<T, int, bool>> exp_right)
+        {
+            var candidateExpr = Expression.Parameter(typeof(T), "candidate");
+            var parameterReplacer = new ParameterReplacer(candidateExpr);
+            var left = parameterReplacer.Replace(exp_left.Body);
+            var right = parameterReplacer.Replace(exp_right.Body);
+
+            var indexExpr = Expression.Parameter(typeof(int), "index");
+            var parameterReplacer2 = new ParameterReplacer(indexExpr);
+            left = parameterReplacer2.Replace(exp_left.Body);
+            right = parameterReplacer2.Replace(exp_right.Body);
+            var body = Expression.Or(left, right);
+            return Expression.Lambda<Func<T, int, bool>>(body, candidateExpr, indexExpr);
+        }
     }
 }
