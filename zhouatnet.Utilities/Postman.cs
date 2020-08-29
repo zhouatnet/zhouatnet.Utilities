@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -17,34 +18,54 @@ namespace zhouatnet.Utilities
             _HttpClient = new HttpClient();
         }
 
-        public static async Task<JToken> Post(string url, object data = null, Action<JToken> success = null, Action<Exception> error = null, string token = null)
+
+        public static async Task<HttpResponseMessage> PostForm(string url, Dictionary<string, string> formData = null, Action<HttpResponseMessage> success = null, Action<Exception> error = null, string token = null)
+        {
+            return await Ajax(url, HttpMethod.Post, formData, success, error, token);
+        }
+
+        public static async Task<HttpResponseMessage> GetByForm(string url, Dictionary<string, string> formData = null, Action<HttpResponseMessage> success = null, Action<Exception> error = null, string token = null)
+        {
+            return await Ajax(url, HttpMethod.Get, formData, success, error, token);
+        }
+
+
+        public static async Task<HttpResponseMessage> Post(string url, object data = null, Action<HttpResponseMessage> success = null, Action<Exception> error = null, string token = null)
         {
             return await Ajax(url, HttpMethod.Post, data, success, error, token);
         }
 
-        public static async Task<JToken> Get(string url, object data = null, Action<JToken> success = null, Action<Exception> error = null, string token = null)
+        public static async Task<HttpResponseMessage> Get(string url, object data = null, Action<HttpResponseMessage> success = null, Action<Exception> error = null, string token = null)
         {
             return await Ajax(url, HttpMethod.Get, data, success, error, token);
         }
 
-        public static async Task<JToken> Ajax(string url, HttpMethod method, object data = null, Action<JToken> success = null, Action<Exception> error = null, string token = null)
+        public static async Task<HttpResponseMessage> Ajax(string url, HttpMethod method, object data = null, Action<HttpResponseMessage> success = null, Action<Exception> error = null, string token = null)
         {
             HttpResponseMessage response = await SendAsync(url, method, data, token);
-            JToken res;
+
             try
             {
                 response.EnsureSuccessStatusCode();
-                res = JToken.Parse(await response.Content.ReadAsStringAsync());
             }
             catch (Exception ex)
             {
-                res = null;
                 error?.Invoke(ex);
-                return res;
+                return response;
             }
 
-            success?.Invoke(res);
-            return res;
+            success?.Invoke(response);
+            return response;
+        }
+
+        public static async Task<T> GetByForm<T>(string url, Dictionary<string, string> formData = null, Action<T> success = null, Action<Exception> error = null, string token = null)
+        {
+            return await Ajax<T>(url, HttpMethod.Get, formData, success, error, token);
+        }
+
+        public static async Task<T> PostForm<T>(string url, Dictionary<string, string> formData = null, Action<T> success = null, Action<Exception> error = null)
+        {
+            return await Ajax<T>(url, HttpMethod.Post, formData, success, error);
         }
 
         public static async Task<T> Get<T>(string url, object data = null, Action<T> success = null, Action<Exception> error = null, string token = null)
@@ -83,9 +104,17 @@ namespace zhouatnet.Utilities
 
             if (data != null)
             {
-                string json = JsonConvert.SerializeObject(data);
-                request.Content = new StringContent(json);
-                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                IEnumerable<KeyValuePair<string, string>> formData = data as IEnumerable<KeyValuePair<string, string>>;
+                if (formData != null)
+                {
+                    request.Content = new FormUrlEncodedContent(formData);
+                }
+                else
+                {
+                    string jsonStr = JsonConvert.SerializeObject(data);
+                    request.Content = new StringContent(jsonStr);
+                    request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(token))
